@@ -12,6 +12,7 @@ import { cmToFtIn } from '../lib/units';
 import { goalDirection } from '../lib/goal';
 import { phaseTypeLabel } from '../lib/phases';
 import { APP_VERSION, parseBackupText } from '../lib/backup';
+import { isNative } from '../lib/platform';
 
 export function SettingsSection({ title, children, footer }: { title: string; children: ReactNode; footer?: ReactNode }) {
   return (
@@ -211,12 +212,12 @@ export function SettingsScreen() {
         footer="CSV is for spreadsheets (weights in kg). The JSON backup contains everything — entries, goals, phases and settings — and is the format used for restoring."
       >
         <SettingsRow icon={<Download size={18} />} label="Export CSV" value={`${data.entries.length} entries`} onClick={exportCsv} />
-        <SettingsRow icon={<FileJson size={18} />} label="Download JSON backup" onClick={exportJson} />
+        <SettingsRow icon={<FileJson size={18} />} label={isNative ? 'Save JSON backup' : 'Download JSON backup'} onClick={exportJson} />
         <SettingsRow icon={<Upload size={18} />} label="Restore from backup" sub="You'll choose merge or replace" onClick={() => fileRef.current?.click()} />
         <input
           ref={fileRef}
           type="file"
-          accept="application/json,.json"
+          accept={isNative ? undefined : 'application/json,.json'}
           hidden
           onChange={(e) => void onFile(e.target.files?.[0])}
         />
@@ -231,8 +232,9 @@ export function SettingsScreen() {
         </div>
         <div className="list-row" style={{ alignItems: 'flex-start' }}>
           <p className="section-note" style={{ whiteSpace: 'normal' }}>
-            Your data is stored only on this device, in this browser's local database (IndexedDB). There is no account
-            and no cloud sync, so download a backup regularly. Clearing site data removes it.
+            {isNative
+              ? "Your data is stored only on this phone, in the app's private storage. There is no account and no cloud sync. It survives restarts and app updates but is deleted if you uninstall the app, so save a backup regularly."
+              : "Your data is stored only on this device, in this browser's local database (IndexedDB). There is no account and no cloud sync, so download a backup regularly. Clearing site data removes it."}
           </p>
         </div>
         <details className="explain">

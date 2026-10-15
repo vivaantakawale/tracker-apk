@@ -6,19 +6,9 @@ import { fmtDateTime, fmtWeight } from '../lib/format';
 import { createBackup, entriesToCsv } from '../lib/backup';
 import { todayKey } from '../lib/dates';
 
-const errMsg = (e: unknown) => (e instanceof Error ? e.message : 'Something went wrong.');
+import { saveTextFile } from '../lib/platform';
 
-export function downloadText(filename: string, text: string, mime: string) {
-  const blob = new Blob([text], { type: mime });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
+const errMsg = (e: unknown) => (e instanceof Error ? e.message : 'Something went wrong.');
 
 /** Common user flows that combine store writes with confirmation and feedback. */
 export function useAppActions() {
@@ -87,19 +77,27 @@ export function useAppActions() {
     [actions, ui],
   );
 
-  const exportCsv = useCallback(() => {
+  const exportCsv = useCallback(async () => {
     if (!data.entries.length) {
       ui.toast('There are no entries to export yet.');
       return;
     }
-    downloadText(`weight-tracker-entries-${todayKey()}.csv`, entriesToCsv(data.entries), 'text/csv;charset=utf-8');
-    ui.toast(`Exported ${data.entries.length} entries as CSV`);
+    try {
+      const r = await saveTextFile(`weight-tracker-entries-${todayKey()}.csv`, entriesToCsv(data.entries), 'text/csv;charset=utf-8');
+      if (r === 'saved') ui.toast(`Exported ${data.entries.length} entries as CSV`);
+    } catch (e) {
+      ui.toast(`Export failed. ${errMsg(e)}`, { tone: 'error' });
+    }
   }, [data, ui]);
 
-  const exportJson = useCallback(() => {
-    const backup = createBackup(data);
-    downloadText(`weight-tracker-backup-${todayKey()}.json`, JSON.stringify(backup, null, 2), 'application/json');
-    ui.toast('Backup downloaded');
+  const exportJson = useCallback(async () => {
+    try {
+      const backup = createBackup(data);
+      const r = await saveTextFile(`weight-tracker-backup-${todayKey()}.json`, JSON.stringify(backup, null, 2), 'application/json');
+      if (r === 'saved') ui.toast('Backup saved');
+    } catch (e) {
+      ui.toast(`Backup failed. ${errMsg(e)}`, { tone: 'error' });
+    }
   }, [data, ui]);
 
   return { deleteEntry, endPhase, deletePhase, exportCsv, exportJson, errMsg };

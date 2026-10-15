@@ -1,3 +1,7 @@
 node_modules
+# Signing keys must never be committed
+*.jks
+*.keystore
+*.p12
 dist
 *.local

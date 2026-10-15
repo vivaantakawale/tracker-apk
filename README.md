@@ -16,14 +16,30 @@ npm run preview    # serve the production build
 To install it to the home screen with offline support, host `dist/` over HTTPS (any static host works). Chrome only
 enables service workers and installation on HTTPS or `localhost`.
 
-## Deploy (GitHub Pages)
+## Android app (APK)
 
-`.github/workflows/deploy.yml` runs the tests, builds the app and publishes `dist/` on every push to `main`.
-One-time setup: in the repository, go to **Settings → Pages → Build and deployment → Source** and choose **GitHub Actions**.
-The app is served at `https://<username>.github.io/<repo>/`. Paths are relative (`base: './'`), so any repository name works.
+The web app is wrapped as a native Android app with [Capacitor](https://capacitorjs.com) (`android/`, `capacitor.config.ts`).
+Inside the app, data lives in the app's private storage, so clearing Chrome doesn't affect it. It survives app updates
+and is deleted only if the app is uninstalled. Exports open Android's share sheet (save to Drive, Files, etc.), and the
+back button closes dialogs and then returns to Home.
 
-On Android: open that address in Chrome, then use **⋮ → Add to Home screen / Install app**.
-Your data lives on the phone at that address, so keep using the same URL and download a backup from Settings now and then.
+**Builds run on GitHub.** `.github/workflows/android.yml` runs on every push to `main`: tests → web build →
+`cap sync` → signed release APK → signature check → GitHub Release named `v1.0.<build number>`.
+Download the APK from the repository's **Releases** page on the phone.
+
+One-time setup: add two repository secrets under **Settings → Secrets and variables → Actions**:
+
+| Secret | Value |
+|---|---|
+| `ANDROID_KEYSTORE_BASE64` | contents of `ANDROID_KEYSTORE_BASE64.txt` from the signing folder |
+| `ANDROID_KEYSTORE_PASSWORD` | contents of `ANDROID_KEYSTORE_PASSWORD.txt` |
+
+The signing key (`weighttracker-release.p12`) is kept **outside the repository** and must never be committed.
+Every release must be signed with the same key, or Android won't install it as an update. Keep a backup of it.
+
+The app id `app.weighttracker.personal` must not change, because Android treats a different id as a different app.
+
+The web version still runs in a browser (`npm run dev`) for development.
 
 ## Stack
 

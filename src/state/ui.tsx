@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { BackupFile } from '../lib/backup';
+import { minimizeApp, onBackButton } from '../lib/platform';
 
 export type Tab = 'home' | 'progress' | 'settings';
 export type ProgressTab = 'trend' | 'history' | 'goal' | 'phases';
@@ -110,6 +111,20 @@ export function UIProvider({ children }: { children: ReactNode }) {
         });
       }),
     [open],
+  );
+
+  // Android back button: close the top sheet, else go Home, else background the app.
+  const backState = useRef({ sheets, tab });
+  backState.current = { sheets, tab };
+  useEffect(
+    () =>
+      onBackButton(() => {
+        const { sheets: open, tab: current } = backState.current;
+        if (open.length) close();
+        else if (current !== 'home') setTab('home');
+        else void minimizeApp();
+      }),
+    [close, setTab],
   );
 
   const dismissToast = useCallback((id: number) => setToasts((t) => t.filter((x) => x.id !== id)), []);

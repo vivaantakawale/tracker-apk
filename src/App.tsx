@@ -8,6 +8,7 @@ import { SettingsScreen } from './screens/SettingsScreen';
 import { Onboarding } from './screens/Onboarding';
 import { SheetHost } from './components/sheets/SheetHost';
 import type { ThemePreference } from './lib/types';
+import { syncStatusBar } from './lib/platform';
 
 const NAV: { tab: Tab; label: string; Icon: typeof House }[] = [
   { tab: 'home', label: 'Home', Icon: House },
@@ -67,8 +68,10 @@ function useTheme(pref: ThemePreference | null) {
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
     const apply = () => {
       const dark = pref === 'dark' || (pref === 'system' && mq.matches);
+      const bg = dark ? '#0e100f' : '#ffffff';
       document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#0e100f' : '#ffffff');
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', bg);
+      void syncStatusBar(dark, bg);
     };
     apply();
     mq.addEventListener('change', apply);
